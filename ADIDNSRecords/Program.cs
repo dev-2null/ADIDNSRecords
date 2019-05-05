@@ -1,0 +1,78 @@
+﻿using System;
+using System.DirectoryServices;
+using System.Net;
+
+namespace ADIDNSRecords
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            DirectoryEntry rootEntry = new DirectoryEntry("LDAP://rootDSE");
+
+            String Dn = (string)rootEntry.Properties["defaultNamingContext"].Value;
+
+            String dnsDn = "CN=MicrosoftDNS,DC=DomainDnsZones,";
+
+            String dnsRoot = dnsDn + Dn;
+
+            DirectoryEntry entry = new DirectoryEntry("LDAP://" + dnsRoot);
+            String queryZones = @"(&(objectClass=dnsZone)(!(DC=*arpa))(!(DC=RootDNSServers)))";  //Find DNS Zones
+            DirectorySearcher searchZones = new DirectorySearcher(entry, queryZones);
+            searchZones.SearchScope = SearchScope.OneLevel;
+
+            foreach (SearchResult zone in searchZones.FindAll())
+            {
+                Console.WriteLine("----------------------------------------------------------");
+
+                Console.WriteLine("[-]Dns Zone: " + zone.Path);
+
+                DirectoryEntry zoneEntry = new DirectoryEntry(zone.Path);
+                String queryRecord = @"(&(objectClass=*)(!(DC=@))(!(DC=*DnsZones))(!(DC=*arpa))(!(DC=_*))(!dNSTombstoned=TRUE))"; //excluding objects that have been removed
+                DirectorySearcher searchRecord = new DirectorySearcher(zoneEntry, queryRecord);
+                searchRecord.SearchScope = SearchScope.OneLevel;
+
+                foreach (SearchResult record in searchRecord.FindAll())
+                {
+
+                    try
+                    {
+                        string hostname = record.Properties["DC"][0].ToString();
+
+                        GetIP(hostname);
+                    }
+                    catch (Exception e)      //No permission to view records
+                    {
+                        int end = record.Path.IndexOf(",CN=MicrosoftDNS,DC=DomainDnsZones,");
+                        string name = record.Path.Substring(0, end).Replace("LDAP://", "").Replace("DC=", "").Replace(",", ".");
+                        GetIP(name);
+                    }
+
+                }
+            }
+        }
+
+        static void GetIP(string hostname)
+        {
+            DirectoryEntry rootEntry = new DirectoryEntry("LDAP://rootDSE");
+
+            String Dn = (string)rootEntry.Properties["defaultNamingContext"].Value;
+
+            String domain = Dn.Replace("DC=", "").Replace(",", ".");
+
+            string FQhostname = hostname + "." + domain;
+
+            try
+            {
+                IPHostEntry ipEntry = Dns.GetHostEntry(FQhostname);
+
+                Console.WriteLine("[*]{0,-20}  :   {1,-20}", hostname, ipEntry.AddressList[0]);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("[*]{0,-20}  :   {1,-20}", hostname, "TimeOut");
+            }
+        }
+
+    }
+}
