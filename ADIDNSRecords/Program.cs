@@ -34,11 +34,9 @@ namespace ADIDNSRecords
 
                 foreach (SearchResult record in searchRecord.FindAll())
                 {
-
                     try
                     {
                         string hostname = record.Properties["DC"][0].ToString();
-
                         GetIP(hostname);
                     }
                     catch (Exception e)      //No permission to view records
@@ -54,17 +52,9 @@ namespace ADIDNSRecords
 
         static void GetIP(string hostname)
         {
-            DirectoryEntry rootEntry = new DirectoryEntry("LDAP://rootDSE");
-
-            String Dn = (string)rootEntry.Properties["defaultNamingContext"].Value;
-
-            String domain = Dn.Replace("DC=", "").Replace(",", ".");
-
-            string FQhostname = hostname + "." + domain;
-
             try
             {
-                IPHostEntry ipEntry = Dns.GetHostEntry(FQhostname);
+                IPHostEntry ipEntry = Dns.GetHostEntry(hostname);
 
                 Console.WriteLine("[*]{0,-20}  :   {1,-20}", hostname, ipEntry.AddressList[0]);
             }
