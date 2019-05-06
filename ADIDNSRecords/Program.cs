@@ -12,14 +12,14 @@ namespace ADIDNSRecords
 
             String Dn = (string)rootEntry.Properties["defaultNamingContext"].Value;
 
-            String dnsDn = "CN=MicrosoftDNS,DC=DomainDnsZones,";
+            String dnsDn = "DC=DomainDnsZones,";//not searching from here "CN=MicrosoftDNS,DC=DomainDnsZones,";
 
             String dnsRoot = dnsDn + Dn;
 
             DirectoryEntry entry = new DirectoryEntry("LDAP://" + dnsRoot);
             String queryZones = @"(&(objectClass=dnsZone)(!(DC=*arpa))(!(DC=RootDNSServers)))";  //Find DNS Zones
             DirectorySearcher searchZones = new DirectorySearcher(entry, queryZones);
-            searchZones.SearchScope = SearchScope.OneLevel;
+            //default  searchZones.SearchScope = SearchScope.Subtree;
 
             foreach (SearchResult zone in searchZones.FindAll())
             {
