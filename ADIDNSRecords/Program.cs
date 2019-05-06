@@ -10,11 +10,13 @@ namespace ADIDNSRecords
         {
             DirectoryEntry rootEntry = new DirectoryEntry("LDAP://rootDSE");
 
-            String Dn = (string)rootEntry.Properties["defaultNamingContext"].Value;
+            string Dn = (string)rootEntry.Properties["defaultNamingContext"].Value;
 
-            String dnsDn = "DC=DomainDnsZones,";//not searching from here "CN=MicrosoftDNS,DC=DomainDnsZones,";
+            string dnsDn = "DC=DomainDnsZones,";//not searching from here "CN=MicrosoftDNS,DC=DomainDnsZones,";
 
-            String dnsRoot = dnsDn + Dn;
+            string dnsRoot = dnsDn + Dn;
+
+            string hostname = null;
 
             string domain = Dn.Replace("DC=", "").Replace(",", ".");
 
@@ -38,18 +40,16 @@ namespace ADIDNSRecords
 
                 foreach (SearchResult record in searchRecord.FindAll())
                 {
-                    try
+                    if (record.Properties.Contains("DC"))
                     {
-                        string hostname = record.Properties["DC"][0].ToString();
-                        GetIP(hostname + "." + domain);
+                        hostname = record.Properties["DC"][0].ToString() + "." + domain;
                     }
-                    catch (Exception e)      //No permission to view records
+                    else            //No permission to view records
                     {
                         int end = record.Path.IndexOf(",CN=MicrosoftDNS,DC=DomainDnsZones,");
-                        string name = record.Path.Substring(0, end).Replace("LDAP://", "").Replace("DC=", "").Replace(",", ".");
-                        GetIP(name);
+                        hostname = record.Path.Substring(0, end).Replace("LDAP://", "").Replace("DC=", "").Replace(",", ".");
                     }
-
+                    GetIP(hostname);
                 }
             }
         }
