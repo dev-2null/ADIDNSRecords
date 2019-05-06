@@ -16,6 +16,10 @@ namespace ADIDNSRecords
 
             String dnsRoot = dnsDn + Dn;
 
+            string domain = Dn.Replace("DC=", "").Replace(",", ".");
+
+            Console.WriteLine("Seaching in {0}", domain);
+
             DirectoryEntry entry = new DirectoryEntry("LDAP://" + dnsRoot);
             String queryZones = @"(&(objectClass=dnsZone)(!(DC=*arpa))(!(DC=RootDNSServers)))";  //Find DNS Zones
             DirectorySearcher searchZones = new DirectorySearcher(entry, queryZones);
@@ -37,7 +41,7 @@ namespace ADIDNSRecords
                     try
                     {
                         string hostname = record.Properties["DC"][0].ToString();
-                        GetIP(hostname);
+                        GetIP(hostname + "." + domain);
                     }
                     catch (Exception e)      //No permission to view records
                     {
