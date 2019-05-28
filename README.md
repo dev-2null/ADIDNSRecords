@@ -3,22 +3,30 @@ ADIDNSRecords is an alternative C# Implementation tool to retrieve Active Direct
 
 It is also inspired by  [SharpAdidnsdump](https://github.com/b4rtik/SharpAdidnsdump) project implemented by [@b4rtik](https://twitter.com/b4rtik).
 
+For more technical information, please read his amazing post here:
+
+https://dirkjanm.io/getting-in-the-zone-dumping-active-directory-dns-with-adidnsdump/
+
+## Searching in the ADIDNS
+It will retrieve DNS records from the Application Partition (DomainDnsZones and ForestDnsZones).
 
 
 
+## DNS Records
+**List DNS records retrieved from the Active Directory Integrated DNS and get corresponding IP addresses:**
+```bat
+.\ADIDNSRecords
+```
 
-
-
-
-
-
-For more technical information, please read his amazing post here: **https://dirkjanm.io/getting-in-the-zone-dumping-active-directory-dns-with-adidnsdump/**
-
+**List all (including Tombstoned) DNS records:**
+```bat
+.\ADIDNSRecords all
+```
 
 
 
 # References
-https://dirkjanm.io/getting-in-the-zone-dumping-active-directory-dns-with-adidnsdump/
-https://github.com/dirkjanm/adidnsdump
-https://github.com/b4rtik/SharpAdidnsdump
+* https://dirkjanm.io/getting-in-the-zone-dumping-active-directory-dns-with-adidnsdump/
+* https://github.com/dirkjanm/adidnsdump
+* https://github.com/b4rtik/SharpAdidnsdump
 
