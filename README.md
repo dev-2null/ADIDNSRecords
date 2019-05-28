@@ -8,17 +8,17 @@ For more technical information, please read his amazing post here:
 https://dirkjanm.io/getting-in-the-zone-dumping-active-directory-dns-with-adidnsdump/
 
 ## Searching in the ADIDNS
-It will retrieve DNS records from the Application Partition (*DomainDnsZones* and *ForestDnsZones*).
+It will retrieve DNS records from the Application Partition (***DomainDnsZones** and **ForestDnsZones**).
 
 
 
 ## DNS Records
-**List DNS records retrieved from the Active Directory Integrated DNS and get corresponding IP addresses:**
+List DNS records retrieved from the Active Directory Integrated DNS and get corresponding IP addresses:
 ```bat
 .\ADIDNSRecords
 ```
 
-**List all (including Tombstoned) DNS records with IP addresses:**
+List all (including Tombstoned) DNS records with IP addresses:
 ```bat
 .\ADIDNSRecords all
 ```
