@@ -8,65 +8,119 @@ namespace ADIDNSRecords
     {
         static void Main(string[] args)
         {
+
             DirectoryEntry rootEntry = new DirectoryEntry("LDAP://rootDSE");
 
-            string Dn = (string)rootEntry.Properties["defaultNamingContext"].Value;
+            //Current domain DN
+            string dDn = (string)rootEntry.Properties["defaultNamingContext"].Value;
 
-            string dnsDn = "DC=DomainDnsZones,";//not searching from here "CN=MicrosoftDNS,DC=DomainDnsZones,";
+            //Current forest DN
+            string fDn = (string)rootEntry.Properties["rootDomainNamingContext"].Value;
 
-            string dnsRoot = dnsDn + Dn;
+            //domain dns Dn
+            string dDnsDn = "DC=DomainDnsZones,";//not searching from here "CN=MicrosoftDNS,DC=DomainDnsZones,";
 
+            //forest dns Dn
+            string fDnsDn = "DC=ForestDnsZones,";
+
+            string dDnsRoot = dDnsDn + dDn;
+
+            string fDnsRoot = fDnsDn + fDn;
+
+            string domainName = dDn.Replace("DC=", "").Replace(",", ".");
+            string forestName = fDn.Replace("DC=", "").Replace(",", ".");
+
+            //Print Tombstoned records
+            bool printTombstoned = false;
+
+            if (args.Length > 0)
+            {
+                if (args[0].ToLower() == "all")
+                {
+                    printTombstoned = true;
+                }
+            }   
+
+            Console.WriteLine("[-] Seaching in Domain: {0}", domainName);
+            GetDNS(domainName, dDnsDn, dDnsRoot, printTombstoned);
+            Console.WriteLine("[-] Seaching in Forest: {0}", forestName);
+            GetDNS(forestName, fDnsDn, fDnsRoot, printTombstoned);
+
+
+
+        }
+
+
+        public static void GetIP(string hostname, bool printTombstoned)
+        {
+            try
+            {
+                IPHostEntry ipEntry = Dns.GetHostEntry(hostname);
+
+                Console.WriteLine("   {0,-20}  :   {1,-20}", hostname, ipEntry.AddressList[0]);
+            }
+            catch (Exception)
+            {
+                if (printTombstoned)
+                {
+                    Console.WriteLine("   {0,-20}  :   {1,-20}", hostname, "Tombstone");
+                }
+            }
+        }
+
+
+
+        //FQN       :   domain.local
+        //dnsDn     :   DC=ForestDnsZones,
+        //dnsRoot   :   DC=ForestDnsZones,DC=domain,DC=local
+        //bool      :   true (include tomstoned records or not)
+        public static void GetDNS(string FQN,string dnsDn, string dnsRoot, bool printTombstoned)
+        {
             string hostname = null;
 
-            string domain = Dn.Replace("DC=", "").Replace(",", ".");
+            DirectoryEntry entry = new DirectoryEntry("LDAP://"+FQN+ "/" + dnsRoot);
 
-            Console.WriteLine("Seaching in {0}", domain);
+            //Find DNS Zones
+            String queryZones = @"(&(objectClass=dnsZone)(!(DC=*arpa))(!(DC=RootDNSServers)))";  
 
-            DirectoryEntry entry = new DirectoryEntry("LDAP://" + dnsRoot);
-            String queryZones = @"(&(objectClass=dnsZone)(!(DC=*arpa))(!(DC=RootDNSServers)))";  //Find DNS Zones
             DirectorySearcher searchZones = new DirectorySearcher(entry, queryZones);
-            //default  searchZones.SearchScope = SearchScope.Subtree;
+
+            searchZones.SearchScope = SearchScope.Subtree;
 
             foreach (SearchResult zone in searchZones.FindAll())
             {
                 Console.WriteLine("----------------------------------------------------------");
 
-                Console.WriteLine("[-]Dns Zone: " + zone.Path);
+                Console.WriteLine("[-]Dns Zone: " + zone.Properties["Name"][0]);
 
                 DirectoryEntry zoneEntry = new DirectoryEntry(zone.Path);
-                String queryRecord = @"(&(objectClass=*)(!(DC=@))(!(DC=*DnsZones))(!(DC=*arpa))(!(DC=_*))(!dNSTombstoned=TRUE))"; //excluding objects that have been removed
+
+                //excluding objects that have been removed
+                String queryRecord = @"(&(objectClass=*)(!(DC=@))(!(DC=*DnsZones))(!(DC=*arpa))(!(DC=_*))(!dNSTombstoned=TRUE))"; 
+
                 DirectorySearcher searchRecord = new DirectorySearcher(zoneEntry, queryRecord);
+
                 searchRecord.SearchScope = SearchScope.OneLevel;
 
                 foreach (SearchResult record in searchRecord.FindAll())
                 {
                     if (record.Properties.Contains("DC"))
                     {
-                        hostname = record.Properties["DC"][0].ToString() + "." + domain;
+                        hostname = record.Properties["DC"][0] + "." + FQN;
                     }
                     else            //No permission to view records
                     {
-                        int end = record.Path.IndexOf(",CN=MicrosoftDNS,DC=DomainDnsZones,");
-                        hostname = record.Path.Substring(0, end).Replace("LDAP://", "").Replace("DC=", "").Replace(",", ".");
+                        string DN = ",CN=MicrosoftDNS," + dnsDn;
+
+                        int end = record.Path.IndexOf(DN);
+
+                        string ldapheader = "LDAP://"+FQN+"/";
+
+                        hostname = record.Path.Substring(0, end).Replace(ldapheader, "").Replace("DC=", "").Replace(",", ".");
                     }
-                    GetIP(hostname);
+                    GetIP(hostname, printTombstoned);
                 }
             }
         }
-
-        static void GetIP(string hostname)
-        {
-            try
-            {
-                IPHostEntry ipEntry = Dns.GetHostEntry(hostname);
-
-                Console.WriteLine("[*]{0,-20}  :   {1,-20}", hostname, ipEntry.AddressList[0]);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("[*]{0,-20}  :   {1,-20}", hostname, "TimeOut");
-            }
-        }
-
     }
 }
