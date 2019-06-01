@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C25EE635-6B04-48C0-A5EB-B556A4DD5480}</ProjectGuid>
+    <ProjectGuid>{87DEA353-9F63-4178-B68D-6BC1675570B5}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>ADIDNSRecords</RootNamespace>
     <AssemblyName>ADIDNSRecords</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
@@ -37,7 +37,6 @@
     <Reference Include="System.DirectoryServices" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>

@@ -39,12 +39,27 @@ namespace ADIDNSRecords
                 {
                     printTombstoned = true;
                 }
-            }   
+            }
 
-            Console.WriteLine("[-] Seaching in Domain: {0}", domainName);
-            GetDNS(domainName, dDnsDn, dDnsRoot, printTombstoned);
-            Console.WriteLine("[-] Seaching in Forest: {0}", forestName);
-            GetDNS(forestName, fDnsDn, fDnsRoot, printTombstoned);
+            Console.WriteLine("\n[-] Seaching in Domain: {0}", domainName);
+            try
+            {
+                GetDNS(domainName, dDnsDn, dDnsRoot, printTombstoned);
+            }
+            catch
+            {
+                Console.WriteLine("DomainDnsZones does not exist on the server.");
+            }
+
+            Console.WriteLine("\n[-] Seaching in Forest: {0}", forestName);
+            try
+            {
+                GetDNS(forestName, fDnsDn, fDnsRoot, printTombstoned);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
 
 
 
@@ -74,14 +89,14 @@ namespace ADIDNSRecords
         //dnsDn     :   DC=ForestDnsZones,
         //dnsRoot   :   DC=ForestDnsZones,DC=domain,DC=local
         //bool      :   true (include tomstoned records or not)
-        public static void GetDNS(string FQN,string dnsDn, string dnsRoot, bool printTombstoned)
+        public static void GetDNS(string FQN, string dnsDn, string dnsRoot, bool printTombstoned)
         {
             string hostname = null;
 
-            DirectoryEntry entry = new DirectoryEntry("LDAP://"+FQN+ "/" + dnsRoot);
+            DirectoryEntry entry = new DirectoryEntry("LDAP://" + FQN + "/" + dnsRoot);
 
             //Find DNS Zones
-            String queryZones = @"(&(objectClass=dnsZone)(!(DC=*arpa))(!(DC=RootDNSServers)))";  
+            String queryZones = @"(&(objectClass=dnsZone)(!(DC=*arpa))(!(DC=RootDNSServers)))";
 
             DirectorySearcher searchZones = new DirectorySearcher(entry, queryZones);
 
@@ -91,12 +106,12 @@ namespace ADIDNSRecords
             {
                 Console.WriteLine("----------------------------------------------------------");
 
-                Console.WriteLine("[-]Dns Zone: " + zone.Properties["Name"][0]);
+                Console.WriteLine(" *  Dns Zone: " + zone.Properties["Name"][0]);
 
                 DirectoryEntry zoneEntry = new DirectoryEntry(zone.Path);
 
                 //excluding objects that have been removed
-                String queryRecord = @"(&(objectClass=*)(!(DC=@))(!(DC=*DnsZones))(!(DC=*arpa))(!(DC=_*))(!dNSTombstoned=TRUE))"; 
+                String queryRecord = @"(&(objectClass=*)(!(DC=@))(!(DC=*DnsZones))(!(DC=*arpa))(!(DC=_*))(!dNSTombstoned=TRUE))";
 
                 DirectorySearcher searchRecord = new DirectorySearcher(zoneEntry, queryRecord);
 
@@ -114,7 +129,7 @@ namespace ADIDNSRecords
 
                         int end = record.Path.IndexOf(DN);
 
-                        string ldapheader = "LDAP://"+FQN+"/";
+                        string ldapheader = "LDAP://" + FQN + "/";
 
                         hostname = record.Path.Substring(0, end).Replace(ldapheader, "").Replace("DC=", "").Replace(",", ".");
                     }
