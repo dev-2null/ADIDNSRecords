@@ -62,7 +62,7 @@ namespace ADIDNSRecords
             }
 
 
-
+            Console.WriteLine();
         }
 
 
@@ -72,13 +72,13 @@ namespace ADIDNSRecords
             {
                 IPHostEntry ipEntry = Dns.GetHostEntry(hostname);
 
-                Console.WriteLine("   {0,-20}  :   {1,-20}", hostname, ipEntry.AddressList[0]);
+                Console.WriteLine("    {0,-20}  :   {1,-20}", hostname, ipEntry.AddressList[0]);
             }
             catch (Exception)
             {
                 if (printTombstoned)
                 {
-                    Console.WriteLine("   {0,-20}  :   {1,-20}", hostname, "Tombstone");
+                    Console.WriteLine("    {0,-20}  :   {1,-20}", hostname, "Tombstone");
                 }
             }
         }
