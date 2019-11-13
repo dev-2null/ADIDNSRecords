@@ -6,7 +6,7 @@ namespace ADIDNSRecords
 {
     public class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
 
             DirectoryEntry rootEntry = new DirectoryEntry("LDAP://rootDSE");
