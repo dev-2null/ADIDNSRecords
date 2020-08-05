@@ -1,11 +1,17 @@
 ﻿using System;
 using System.DirectoryServices;
 using System.Net;
+using System.Collections.Generic;
 
 namespace ADIDNSRecords
 {
     public class Program
     {
+        public static Dictionary<string, byte[]> hostList = new Dictionary<string, byte[]>();
+        public static List<string> privhostList = new List<string>();
+        //Print Tombstoned records
+        public static bool printTombstoned = false;
+
         public static void Main(string[] args)
         {
 
@@ -30,8 +36,7 @@ namespace ADIDNSRecords
             string domainName = dDn.Replace("DC=", "").Replace(",", ".");
             string forestName = fDn.Replace("DC=", "").Replace(",", ".");
 
-            //Print Tombstoned records
-            bool printTombstoned = false;
+            
 
             if (args.Length > 0)
             {
@@ -66,21 +71,38 @@ namespace ADIDNSRecords
         }
 
 
-        public static void GetIP(string hostname, bool printTombstoned)
+        //Retrieve IP from DNS
+        public static void GetIP(string hostname)
         {
             try
             {
                 IPHostEntry ipEntry = Dns.GetHostEntry(hostname);
 
-                Console.WriteLine("    {0,-20}  :   {1,-20}", hostname, ipEntry.AddressList[0]);
+                Console.WriteLine("    {0,-40}           {1,-40}", hostname, ipEntry.AddressList[0]);
             }
             catch (Exception)
             {
                 if (printTombstoned)
                 {
-                    Console.WriteLine("    {0,-20}  :   {1,-20}", hostname, "Tombstone");
+                    Console.WriteLine("    {0,-40}           {1,-40}", hostname, "Tombstone");
                 }
             }
+        }
+
+
+        //Retrieve IP from LDAP dnsRecord
+        public static void ResolveDNSRecord(string hostname, byte[] dnsByte)
+        {
+            var rdatatype = dnsByte[2];
+
+            string ip = null;
+
+            if (rdatatype == 1)
+            {
+                ip = dnsByte[24] + "." + dnsByte[25] + "." + dnsByte[26] + "." + dnsByte[27];
+            }
+            Console.WriteLine("    {0,-40}           {1,-40}", hostname,ip);
+
         }
 
 
@@ -119,11 +141,17 @@ namespace ADIDNSRecords
 
                 foreach (SearchResult record in searchRecord.FindAll())
                 {
-                    if (record.Properties.Contains("DC"))
+                    if (record.Properties.Contains("dnsRecord"))
                     {
-                        hostname = record.Properties["DC"][0] + "." + FQN;
+                        if (record.Properties["dnsRecord"][0] is byte[])
+                        {
+                            var dnsByte = ((byte[])record.Properties["dnsRecord"][0]);
+
+                            hostList.Add(record.Properties["DC"][0] + "." + FQN, dnsByte);
+                        }
                     }
-                    else            //No permission to view records
+                    //No permission to view records
+                    else
                     {
                         string DN = ",CN=MicrosoftDNS," + dnsDn;
 
@@ -132,9 +160,21 @@ namespace ADIDNSRecords
                         string ldapheader = "LDAP://" + FQN + "/";
 
                         hostname = record.Path.Substring(0, end).Replace(ldapheader, "").Replace("DC=", "").Replace(",", ".");
+                        privhostList.Add(hostname);
                     }
-                    GetIP(hostname, printTombstoned);
+                    
                 }
+            }
+
+            //Iterating each entry
+            foreach (KeyValuePair<string, byte[]> host in hostList)
+            {
+                
+                ResolveDNSRecord(host.Key, host.Value);
+            }
+            foreach (var host in privhostList)
+            {
+                GetIP(host);
             }
         }
     }
