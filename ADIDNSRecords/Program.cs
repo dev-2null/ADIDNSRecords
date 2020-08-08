@@ -146,8 +146,12 @@ namespace ADIDNSRecords
                         if (record.Properties["dnsRecord"][0] is byte[])
                         {
                             var dnsByte = ((byte[])record.Properties["dnsRecord"][0]);
-
-                            hostList.Add(record.Properties["DC"][0] + "." + FQN, dnsByte);
+                            var key = record.Properties["DC"][0] + "." + FQN;
+                            if (!hostList.ContainsKey(key))
+                            {
+                                hostList.Add(key, dnsByte);
+                            }
+                            
                         }
                     }
                     //No permission to view records
@@ -160,16 +164,17 @@ namespace ADIDNSRecords
                         string ldapheader = "LDAP://" + FQN + "/";
 
                         hostname = record.Path.Substring(0, end).Replace(ldapheader, "").Replace("DC=", "").Replace(",", ".");
-                        privhostList.Add(hostname);
+                        if (!privhostList.Contains(hostname))
+                        {
+                            privhostList.Add(hostname);
+                        }
                     }
-                    
                 }
             }
 
             //Iterating each entry
             foreach (KeyValuePair<string, byte[]> host in hostList)
             {
-                
                 ResolveDNSRecord(host.Key, host.Value);
             }
             foreach (var host in privhostList)
